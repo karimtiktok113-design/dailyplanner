@@ -5414,6 +5414,16 @@ const Settings = {
         <div class="settings-section-title">Data Management</div>
         <div class="settings-item">
           <div class="settings-item-info">
+            <div class="settings-item-label">Load Demo Data</div>
+            <div class="settings-item-desc">Populate the planner with a complete showcase of realistic tasks, habits, goals, time blocks, appointments, and notes</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="DemoData.confirmLoad()" style="display:inline-flex;align-items:center;gap:6px">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+            <span>✨ Load Demo Data</span>
+          </button>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-info">
             <div class="settings-item-label">Export Backup</div>
             <div class="settings-item-desc">Download all your planner data as JSON</div>
           </div>
@@ -5485,9 +5495,427 @@ const Settings = {
 };
 
 // ============================================================
+// DEMO DATA GENERATOR & WORKSPACE ENGINE
+// ============================================================
+const DemoData = {
+  generate() {
+    const today = DateUtils.today();
+    const yesterday = DateUtils.addDays(today, -1);
+    const tomorrow = DateUtils.addDays(today, 1);
+    const in2Days = DateUtils.addDays(today, 2);
+    const in3Days = DateUtils.addDays(today, 3);
+    const in5Days = DateUtils.addDays(today, 5);
+    const in30Days = DateUtils.addDays(today, 30);
+    const in45Days = DateUtils.addDays(today, 45);
+    const in60Days = DateUtils.addDays(today, 60);
+
+    const mon = DateUtils.weekStart(today);
+    const weekDays = DateUtils.getWeekDays(mon); // [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+    const weekKey = DateUtils.isoWeek(mon);
+
+    // Current settings preserved or defaulted
+    const currentSettings = (Store._cache && Store._cache.settings) || {};
+    const settings = {
+      theme: currentSettings.theme || 'light',
+      accent: currentSettings.accent || '#6366f1',
+      layout: currentSettings.layout || 'comfortable',
+      sidebarCollapsed: false,
+      startPage: 'dashboard',
+      userName: (currentSettings.userName && currentSettings.userName !== 'Planner') ? currentSettings.userName : 'Karim'
+    };
+
+    // 1. Priorities
+    const priorities = {};
+    priorities[today] = [
+      { id: uid(), text: 'Finalize Q3 Product Roadmap & Architecture', note: 'Coordinate tech specifications and milestone targets', done: true, type: 'Work' },
+      { id: uid(), text: 'Executive Strategy & Progress Walkthrough', note: 'Present dashboard metrics and release schedule', done: true, type: 'Work' },
+      { id: uid(), text: '45-Min Strength & Conditioning Workout', note: 'Upper body focus and hydration post-session', done: false, type: 'Health' }
+    ];
+    priorities[yesterday] = [
+      { id: uid(), text: 'Sprint Planning & Backlog Grooming', note: 'Estimated story points for the engineering team', done: true, type: 'Work' },
+      { id: uid(), text: 'Review Offline Storage Persistence Engine', note: 'Ensured zero data loss with fallback caching', done: true, type: 'Work' },
+      { id: uid(), text: 'Complete 5km Sunset Recovery Run', note: 'Paced run under 28 mins', done: true, type: 'Health' }
+    ];
+    priorities[tomorrow] = [
+      { id: uid(), text: 'Deploy Production Release Candidate v2.0', note: 'Run pre-flight checks and audit logs', done: false, type: 'Work' },
+      { id: uid(), text: 'Cross-functional UX Design Review', note: 'Collect feedback on new navigation drawer', done: false, type: 'Design' },
+      { id: uid(), text: 'Monthly Budget & Savings Rebalancing', note: 'Review automated deposits and investments', done: false, type: 'Finance' }
+    ];
+
+    // 2. Tasks across today, the week, and upcoming
+    const tasks = [
+      // Today Morning
+      { id: uid(), title: 'Review incoming Pull Requests & API contracts', description: 'Check error handling and unit test coverage', date: today, dueTime: '08:30', priority: 'urgent', category: 'Work', status: 'completed', createdAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+      { id: uid(), title: 'Prepare presentation deck for Executive Briefing', description: 'Include roadmap milestones and completion forecasts', date: today, dueTime: '10:00', priority: 'high', category: 'Work', status: 'completed', createdAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+      { id: uid(), title: 'Review personal monthly budget & investments', description: 'Confirm automated index fund and emergency savings allocations', date: today, dueTime: '11:45', priority: 'medium', category: 'Finance', status: 'completed', createdAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+
+      // Today Afternoon
+      { id: uid(), title: 'Sprint Retrospective & Backlog Refinement', description: 'Team alignment on high-priority deliverables and blockers', date: today, dueTime: '14:00', priority: 'high', category: 'Work', status: 'in-progress', createdAt: new Date().toISOString() },
+      { id: uid(), title: 'Draft technical RFC for client data export API', description: 'Define JSON schemas, rate limits, and caching rules', date: today, dueTime: '16:00', priority: 'medium', category: 'Work', status: 'not-started', createdAt: new Date().toISOString() },
+
+      // Today Evening
+      { id: uid(), title: 'Pick up organic groceries & household essentials', description: 'Produce, protein staples, and almond milk', date: today, dueTime: '18:30', priority: 'low', category: 'Personal', status: 'not-started', createdAt: new Date().toISOString() },
+      { id: uid(), title: 'Read 25 pages of "Designing Data-Intensive Applications"', description: 'Chapter on replication and consensus protocols', date: today, dueTime: '21:00', priority: 'low', category: 'Learning', status: 'not-started', createdAt: new Date().toISOString() },
+
+      // Current Week Days (ensuring full calendar and weekly planner views)
+      { id: uid(), title: 'Weekly team kick-off & goals alignment', description: 'Establish top priorities across engineering and product', date: weekDays[0], dueTime: '09:00', priority: 'high', category: 'Work', status: 'completed', createdAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+      { id: uid(), title: 'Client architecture consultation call', description: 'Demonstrate responsive web features and offline capability', date: weekDays[1], dueTime: '11:00', priority: 'medium', category: 'Work', status: 'completed', createdAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+      { id: uid(), title: 'Database indexing & query performance optimization', description: 'Reduced execution time by 42% on aggregate queries', date: weekDays[2], dueTime: '15:00', priority: 'high', category: 'Work', status: 'completed', createdAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+      { id: uid(), title: 'Design system tokens & contrast accessibility review', description: 'Verify WCAG AAA compliance across all light and dark palettes', date: weekDays[3], dueTime: '13:30', priority: 'medium', category: 'Design', status: 'completed', createdAt: new Date().toISOString(), completedAt: new Date().toISOString() },
+      { id: uid(), title: 'Staging deployment & end-to-end regression testing', description: 'Verify responsive breakpoints on mobile and tablet viewport', date: weekDays[4], dueTime: '14:00', priority: 'urgent', category: 'Work', status: 'not-started', createdAt: new Date().toISOString() },
+      { id: uid(), title: 'Outdoor 10K trail run & mobility training', description: 'Maintain target heart rate zone and steady endurance pace', date: weekDays[5], dueTime: '08:00', priority: 'medium', category: 'Health', status: 'not-started', createdAt: new Date().toISOString() },
+      { id: uid(), title: 'Sunday weekly reflection & meal prep planning', description: 'Fill out weekly review answers and plan next week priorities', date: weekDays[6], dueTime: '17:00', priority: 'low', category: 'Personal', status: 'not-started', createdAt: new Date().toISOString() },
+
+      // Upcoming dates
+      { id: uid(), title: 'Deliver quarterly product roadmap to leadership', description: 'Final slide deck submission with executive summary', date: in3Days, dueTime: '10:00', priority: 'high', category: 'Work', status: 'not-started', createdAt: new Date().toISOString() },
+      { id: uid(), title: 'Automated test suite maintenance & coverage boost', description: 'Increase unit test coverage to 90% across core utilities', date: in5Days, dueTime: '13:00', priority: 'medium', category: 'Work', status: 'not-started', createdAt: new Date().toISOString() }
+    ];
+
+    // 3. Habits & Habit Logs with active streaks
+    const habitMeditationId = uid();
+    const habitWaterId = uid();
+    const habitWorkoutId = uid();
+    const habitReadingId = uid();
+    const habitCodingId = uid();
+    const habitJournalId = uid();
+
+    const habits = [
+      { id: habitMeditationId, name: 'Morning Meditation 🧘', description: '10 mins mindfulness & deep box breathing', icon: '🧘', color: '#8b5cf6', archived: false },
+      { id: habitWaterId, name: 'Drink 2.5L Water 💧', description: 'Stay energized and hydrated throughout the day', icon: '💧', color: '#06b6d4', archived: false },
+      { id: habitWorkoutId, name: 'Daily Workout / Cardio 💪', description: '45 mins strength conditioning or running', icon: '💪', color: '#ef4444', archived: false },
+      { id: habitReadingId, name: '30-min Deep Reading 📚', description: 'Read non-fiction, psychology, or tech books', icon: '📚', color: '#10b981', archived: false },
+      { id: habitCodingId, name: 'Daily Code & Architecture 💻', description: 'Build features, explore patterns, and solve problems', icon: '💻', color: '#6366f1', archived: false },
+      { id: habitJournalId, name: 'Evening Journal & Gratitude ✍️', description: 'Document 3 daily wins and learnings before sleep', icon: '✍️', color: '#f59e0b', archived: false }
+    ];
+
+    const habitLogs = {};
+    const past14Days = Array.from({length: 14}, (_, i) => DateUtils.addDays(today, -i));
+    const past7Days = Array.from({length: 7}, (_, i) => DateUtils.addDays(today, -i));
+
+    // Habits logged over past days creating multi-day streaks
+    habitLogs[habitMeditationId] = [...past14Days]; // 14-day unbroken streak
+    habitLogs[habitWaterId] = [...past14Days]; // 14-day unbroken streak
+    habitLogs[habitCodingId] = [...past14Days]; // 14-day unbroken streak
+    habitLogs[habitWorkoutId] = [today, yesterday, DateUtils.addDays(today,-2), DateUtils.addDays(today,-4), DateUtils.addDays(today,-5), DateUtils.addDays(today,-7), DateUtils.addDays(today,-9), DateUtils.addDays(today,-11)]; // active workout cadence
+    habitLogs[habitReadingId] = [...past7Days]; // 7-day streak
+    habitLogs[habitJournalId] = [today, yesterday, DateUtils.addDays(today,-2), DateUtils.addDays(today,-3), DateUtils.addDays(today,-4), DateUtils.addDays(today,-5)]; // 6-day streak
+
+    // 4. Goals & Milestones
+    const goals = [
+      {
+        id: uid(),
+        title: 'Launch Planner Pro v2.0 Platform',
+        description: 'Complete high-performance offline planner with full responsive UX, rich analytics, and instant backup',
+        category: 'Work',
+        status: 'in-progress',
+        progress: 75,
+        targetDate: in30Days,
+        milestones: [
+          { id: uid(), title: 'Modern UI/UX design system & color palettes', done: true },
+          { id: uid(), title: 'Offline-first LocalStorage architecture & caching', done: true },
+          { id: uid(), title: 'Quick-add modal & global search engine', done: true },
+          { id: uid(), title: 'Lighthouse 95+ performance & accessibility audit', done: false }
+        ]
+      },
+      {
+        id: uid(),
+        title: 'Complete 10K City Run in Under 50 Minutes',
+        description: 'Consistent aerobic endurance conditioning, weekly interval training, and race preparation',
+        category: 'Health',
+        status: 'in-progress',
+        progress: 60,
+        targetDate: in45Days,
+        milestones: [
+          { id: uid(), title: 'Establish 4x weekly training consistency', done: true },
+          { id: uid(), title: 'Break 25-minute barrier on 5K benchmark', done: true },
+          { id: uid(), title: 'Complete 8K distance test run at race pace', done: true },
+          { id: uid(), title: 'Official 10K race day finish with sub-50 min target', done: false }
+        ]
+      },
+      {
+        id: uid(),
+        title: 'Master Advanced Distributed Systems & TypeScript',
+        description: 'Deep dive into event-driven patterns, state management, and high-scale architecture',
+        category: 'Learning',
+        status: 'in-progress',
+        progress: 50,
+        targetDate: in60Days,
+        milestones: [
+          { id: uid(), title: 'Study distributed consensus & CRDT data structures', done: true },
+          { id: uid(), title: 'Implement real-time collaborative state prototype', done: true },
+          { id: uid(), title: 'Publish technical deep-dive architectural article', done: false }
+        ]
+      },
+      {
+        id: uid(),
+        title: 'Build 6-Month Emergency Reserve & Investment Target',
+        description: 'Automate financial discipline, minimize unneeded expenses, and grow high-yield savings',
+        category: 'Finance',
+        status: 'completed',
+        progress: 100,
+        targetDate: yesterday,
+        milestones: [
+          { id: uid(), title: 'Audit recurring subscriptions and trim waste', done: true },
+          { id: uid(), title: 'Fund 6 months of living expenses into liquid reserve', done: true },
+          { id: uid(), title: 'Automate recurring monthly index fund transfers', done: true }
+        ]
+      }
+    ];
+
+    // 5. Time Blocks for Focus Hours
+    const timeBlocks = [
+      // Today
+      { id: uid(), title: 'Morning Routine, Hydration & Meditation', date: today, startTime: '07:00', endTime: '08:00', category: 'Personal', color: '#8b5cf6' },
+      { id: uid(), title: 'Deep Work: Core Architecture & Synchronization', date: today, startTime: '08:30', endTime: '10:30', category: 'Deep Work', color: '#6366f1' },
+      { id: uid(), title: 'Team Sync & Collaborative Code Reviews', date: today, startTime: '11:00', endTime: '12:00', category: 'Meeting', color: '#3b82f6' },
+      { id: uid(), title: 'Feature Development: Export & Settings Improvements', date: today, startTime: '13:00', endTime: '14:30', category: 'Deep Work', color: '#10b981' },
+      { id: uid(), title: 'Product Strategy & Roadmap Planning', date: today, startTime: '15:00', endTime: '16:00', category: 'Planning', color: '#f59e0b' },
+      { id: uid(), title: 'Inbox Zero & Administrative Follow-ups', date: today, startTime: '16:30', endTime: '17:30', category: 'Admin', color: '#64748b' },
+      { id: uid(), title: 'Physical Training & Evening Run', date: today, startTime: '18:00', endTime: '19:15', category: 'Health', color: '#ef4444' },
+
+      // Tomorrow
+      { id: uid(), title: 'Morning Deep Work: Unit Tests & Refactoring', date: tomorrow, startTime: '08:30', endTime: '10:30', category: 'Deep Work', color: '#6366f1' },
+      { id: uid(), title: 'Client Architecture Walkthrough Session', date: tomorrow, startTime: '11:00', endTime: '12:00', category: 'Meeting', color: '#3b82f6' },
+      { id: uid(), title: 'UX Review & Component Accessibility Testing', date: tomorrow, startTime: '14:00', endTime: '15:30', category: 'Design', color: '#06b6d4' },
+
+      // Yesterday
+      { id: uid(), title: 'Deep Work: Database Query Optimization', date: yesterday, startTime: '09:00', endTime: '11:30', category: 'Deep Work', color: '#6366f1' },
+      { id: uid(), title: 'Sprint Backlog Estimation & Engineering Sync', date: yesterday, startTime: '14:00', endTime: '15:00', category: 'Meeting', color: '#3b82f6' }
+    ];
+
+    // 6. Appointments
+    const appointments = [
+      {
+        id: uid(),
+        title: 'Executive Strategy & Q3 Product Review',
+        date: today,
+        startTime: '10:30',
+        endTime: '11:15',
+        location: 'Executive Boardroom / Zoom',
+        person: 'Sarah Jenkins & VP Team',
+        category: 'Work',
+        description: 'Quarterly review of platform milestones, KPIs, and resource allocation.'
+      },
+      {
+        id: uid(),
+        title: '1-on-1 Mentorship & Engineering Growth Sync',
+        date: today,
+        startTime: '14:00',
+        endTime: '14:45',
+        location: 'Zoom Meeting Room',
+        person: 'David Chen',
+        category: 'Work',
+        description: 'Bi-weekly check-in discussing architectural direction and career development roadmap.'
+      },
+      {
+        id: uid(),
+        title: 'Client Architecture & Integration Walkthrough',
+        date: tomorrow,
+        startTime: '09:30',
+        endTime: '10:30',
+        location: 'Google Meet',
+        person: 'Acme Corp Tech Lead',
+        category: 'Client',
+        description: 'Technical demo of the offline-first web planner integration and data portability.'
+      },
+      {
+        id: uid(),
+        title: 'Annual Dental Health & Hygiene Checkup',
+        date: tomorrow,
+        startTime: '17:00',
+        endTime: '18:00',
+        location: 'Downtown Dental Care',
+        person: 'Dr. Emily Roberts',
+        category: 'Personal',
+        description: 'Routine six-month dental cleaning and preventive examination.'
+      },
+      {
+        id: uid(),
+        title: 'Weekly UX Design Guild Critique',
+        date: in3Days,
+        startTime: '13:00',
+        endTime: '14:00',
+        location: 'Design Studio & Figma',
+        person: 'UX Guild Members',
+        category: 'Design',
+        description: 'Feedback session covering interactive modal animations and mobile drawer transitions.'
+      },
+      {
+        id: uid(),
+        title: 'Cloud Security Compliance Briefing',
+        date: yesterday,
+        startTime: '11:00',
+        endTime: '11:45',
+        location: 'Security Bridge Call',
+        person: 'SecOps Team',
+        category: 'Security',
+        description: 'Passed automated security scan with zero high-risk vulnerabilities.'
+      }
+    ];
+
+    // 7. Notes & Brain Dump
+    const notes = [
+      {
+        id: uid(),
+        title: '🚀 Q3 Strategic Initiatives & OKRs',
+        content: `Objectives & Key Results for Q3:
+1. Platform Reliability: Maintain 99.9% uptime and <100ms UI interaction latency across all devices.
+2. User Delight: Deliver fully responsive offline-first daily and weekly planning workflows.
+3. Code Quality: Maintain modular Vanilla JS architecture with zero heavy third-party bundle overhead.
+4. Adoption: Reach 10,000+ active weekly sessions through frictionless demo workflows.`,
+        category: 'Work',
+        pinned: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: uid(),
+        title: '💡 App Architecture & Offline Performance Principles',
+        content: `Core Architecture Notes:
+• Reactive Single Store: Predictable state updates with automatic localStorage persistence.
+• Dynamic Date Anchoring: All calendar, weekly, and daily views calculate relative to today.
+• Zero-Dep Vanilla Stack: Pure HTML5 semantic markup, CSS custom properties, and native JS.
+• Micro-interactions: Smooth cubic-bezier transitions on checkmarks, modals, and toasts.`,
+        category: 'Tech',
+        pinned: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: uid(),
+        title: '📚 "Atomic Habits" — Four Laws of Behavior Change',
+        content: `Key Takeaways by James Clear:
+1. Make it Obvious: Design your environment so visual cues trigger good habits.
+2. Make it Attractive: Bundle actions you need to do with actions you want to do.
+3. Make it Easy: Reduce friction; optimize the first 2 minutes of the habit.
+4. Make it Satisfying: Immediate rewards reinforce the habit loop.
+Rule: Never miss twice. If you slip up one day, get back on schedule immediately.`,
+        category: 'Personal',
+        pinned: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: uid(),
+        title: '🛒 Weekly Meal Prep & High-Performance Nutrition',
+        content: `Weekly Grocery Staples:
+• Protein: Free-range chicken breast, wild Alaskan salmon, organic eggs, Greek yogurt.
+• Vegetables: Organic baby spinach, Tuscan kale, broccoli florets, avocados, sweet potatoes.
+• Grains: Quinoa, steel-cut oats, wild rice.
+• Hydration: Electrolytes, green tea, fresh lemons, sparkling water.`,
+        category: 'Personal',
+        pinned: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: uid(),
+        title: 'Brain Dump',
+        content: `Stream of consciousness & ideas:
+- Review Lighthouse accessibility score for the new settings view
+- Verify that keyboard shortcuts (/) trigger the search modal instantly
+- Plan a 3-day weekend hiking trip next month once the v2.0 release is shipped
+- Check on domain renewals and automated cloud backups
+- Remember to hydrate: aim for 2.5L daily minimum!`,
+        category: 'brain-dump',
+        pinned: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+
+    // 8. Weekly Review for Current ISO Week
+    const reviews = {};
+    reviews[weekKey] = {
+      wentWell: 'Shipped the core offline synchronization engine and demo workspace ahead of schedule. Maintained uninterrupted morning meditation and gym consistency for 14 consecutive days.',
+      didntGoWell: 'Got pulled into unscheduled Slack threads on Wednesday afternoon which cut into deep-work focus time.',
+      accomplished: 'Completed 14 priority tasks, reviewed 8 pull requests, finalized quarterly architectural benchmarks, and maintained a healthy work-life balance.',
+      improve: 'Block 2 uninterrupted hours every morning for deep technical focus with notifications turned off.',
+      grateful: 'Grateful for an exceptionally supportive team, great health, and consistent daily momentum.',
+      priorities: 'Finalize v2.0 release candidate, prepare comprehensive user documentation, and celebrate milestones with the team.',
+      mainFocus: 'Deliver stable, production-grade release of Planner Pro v2.0',
+      topGoals: '100% test coverage across core planning modules, sub-80ms render speeds',
+      importantTasks: 'Verify cross-browser responsive layouts, update user guide',
+      personalPriorities: 'Sleep 8 hours nightly, run 20km total weekly mileage'
+    };
+
+    return {
+      tasks,
+      goals,
+      habits,
+      habitLogs,
+      appointments,
+      timeBlocks,
+      notes,
+      reviews,
+      priorities,
+      settings
+    };
+  },
+
+  confirmLoad() {
+    UI.openModal(
+      '✨ Load Demo Workspace',
+      `
+      <div style="color:var(--text2);line-height:1.6;font-size:0.9rem">
+        <p style="margin-bottom:12px">This will populate your planner with a rich, realistic workspace to explore every feature:</p>
+        <div style="background:var(--surface2);border-radius:10px;padding:12px 14px;margin-bottom:14px;border:1px solid var(--border-light)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.83rem">
+            <div>🎯 <strong>Top 3 Priorities</strong> (Today & history)</div>
+            <div>📋 <strong>16+ Tasks</strong> (Weekly & daily)</div>
+            <div>🔥 <strong>6 Habits</strong> (With active streaks)</div>
+            <div>🏆 <strong>4 Goals</strong> (With milestones)</div>
+            <div>⏱ <strong>Time Blocks</strong> (Full day focus)</div>
+            <div>📆 <strong>Appointments</strong> (Meetings & details)</div>
+            <div>📝 <strong>Rich Notes & OKRs</strong></div>
+            <div>📊 <strong>Weekly Review</strong> (Reflection & plan)</div>
+          </div>
+        </div>
+        <p style="font-size:0.8rem;color:var(--text3);margin:0">
+          ⚠️ <em>Note:</em> Loading demo data will replace your current entries. You can use <strong>Export Backup</strong> first if you wish to preserve your current work.
+        </p>
+      </div>
+      `,
+      `
+      <button class="btn btn-secondary" onclick="UI.closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="DemoData.apply(); UI.closeModal()" style="display:inline-flex;align-items:center;gap:6px">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+        <span>Load Demo Data</span>
+      </button>
+      `
+    );
+  },
+
+  apply() {
+    const data = this.generate();
+    Store._cache = data;
+    Store.save();
+    Theme.init();
+    App.updateBadges();
+
+    if ($('#user-name-display')) $('#user-name-display').textContent = data.settings.userName || 'Planner';
+    if ($('#user-avatar')) $('#user-avatar').textContent = (data.settings.userName || 'P').charAt(0).toUpperCase();
+
+    Toast.show('Demo workspace loaded successfully! ✨', 'success', 3500);
+
+    // Re-render current page
+    App.renderPage(App.currentPage);
+
+    // If currently on settings, transition smoothly to dashboard to showcase the data
+    setTimeout(() => {
+      App.navigate('dashboard');
+      Toast.show('Switched to Dashboard view 📊', 'info', 2500);
+    }, 600);
+  }
+};
+
+// ============================================================
 // BACKUP MANAGER
 // ============================================================
 const Backup = {
+  loadDemo() {
+    DemoData.confirmLoad();
+  },
   export() {
     const data = Store.get();
     const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
